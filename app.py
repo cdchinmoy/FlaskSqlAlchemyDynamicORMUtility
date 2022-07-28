@@ -38,21 +38,40 @@ def insert(table_name, **values):
         raise e
 
 
-# insert("Customers", name="Chinmoy", address="Kushamndi", email = "cdchinmoy@gmail.com")
+# insert("Customers", name="Mrinmoy", address="Kolkata", email = "cdmrinmoy@gmail.com")
 
-def get_select_data(table_name, select):
+def get_select_data(table_name, *select, **filter):
     sess = Session()
-
     if select:
-        final_str = ''
-        for each in select:
-            final_str = f"{final_str}{table_name}.{each},"
-        final_select = eval(final_str[0:-1])
-        data = sess.query(*final_select).all()
+        final_select = ",".join(f'{table_name}.{each}' for each in select)
+        final_select = eval(final_select)
+        if len(select) > 1:
+            if filter:
+                filter_str = ','.join(f'{table_name}.{key} == "{val}"' for key,val in filter.items())
+                filter_str = eval(filter_str)
+                if len(filter) > 1:
+                    data = sess.query(*final_select).filter(*filter_str).all()
+                else:
+                    data = sess.query(*final_select).filter(filter_str).all()
+            else:    
+                data = sess.query(*final_select).all()
+
+        else:
+            if filter:
+                filter_str = ','.join(f'{table_name}.{key} == "{val}"' for key,val in filter.items())
+                filter_str = eval(filter_str)
+                if len(filter) > 1:
+                    data = sess.query(final_select).filter(*filter_str).all()
+                else:
+                    data = sess.query(final_select).filter(filter_str).all()
+            else:
+                data = sess.query(final_select).all()
+
     return [dict(zip(c.keys(), c)) for c in data]    
 
-# data = get_select_data("Customers", ["id", "name", "address", "email"])
-# print(data)
+'''First Paramiter has to be table name and rest should be field name comma separeted'''
+data = get_select_data("Customers", "id", "name", "address", "email", name="Mrinmoy",address="Kolkata")
+print(data)
 
 
 def get_all_data(table_name, **filter):
@@ -72,5 +91,5 @@ def get_all_data(table_name, **filter):
             data = sess.query(*final_select).all()
     return [dict(zip(c.keys(), c)) for c in data]
 
-data = get_all_data("Customers", id="2",name="Chinmoy")   
-print(data)
+# data = get_all_data("Customers", id="2",name="Chinmoy")   
+# print(data)
