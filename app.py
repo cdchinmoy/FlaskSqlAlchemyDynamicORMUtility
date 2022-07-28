@@ -107,7 +107,7 @@ def delete_data(table_name, **filter):
     eval_table_name = eval(table_name)
     try:
         if filter:
-            filter_str = ','.join(f'{table_name}.{key} == "{val}"' for key,val in filter.items())
+            filter_str = ','.join(f'{key} == "{val}"' for key,val in filter.items())
             filter_str = eval(filter_str)
             if len(filter) > 1:
                 sess.query(eval_table_name).filter(*filter_str).detete()
