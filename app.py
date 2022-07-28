@@ -7,7 +7,6 @@ Base = declarative_base()
 from logger import LOGGER
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-
 metadata = MetaData(bind=engine)
 Session = sessionmaker(bind = engine)
 
@@ -27,14 +26,14 @@ def insert(table_name, **values):
     table = eval(table_name)
     try:      
         c1 = table(**values)
-        sess.add(c1)
-        sess.commit()
-        LOGGER.success(f"Created new customer: {c1}")
+        sess.add(c1) #Add
+        sess.commit() #Commit
+        LOGGER.success(f"Created new record: {c1}")
     except IntegrityError as e:
         LOGGER.error(e.orig)
         raise e.orig from e
     except SQLAlchemyError as e:
-        LOGGER.error(f"Unexpected error when creating user: {e}")
+        LOGGER.error(f"Unexpected error when adding record: {e}")
         raise e
 
 
@@ -67,11 +66,15 @@ def get_select_data(table_name, *select, **filter):
             else:
                 data = sess.query(final_select).all()
 
+    LOGGER.info(
+        f"Selected {len(data)} row: \
+        {data}"
+    )
     return [dict(zip(c.keys(), c)) for c in data]    
 
 '''First Paramiter has to be table name and rest should be field name comma separeted'''
-data = get_select_data("Customers", "id", "name", "address", "email", name="Mrinmoy",address="Kolkata")
-print(data)
+# data = get_select_data("Customers", "id", "name", "address", "email", name="Chinmoy")
+
 
 
 def get_all_data(table_name, **filter):
@@ -89,7 +92,43 @@ def get_all_data(table_name, **filter):
                 data = sess.query(*final_select).filter(filter_str).all()    
         else:    
             data = sess.query(*final_select).all()
+    
+    LOGGER.info(
+        f"Selected {len(data)} row: \
+        {data}"
+    )
     return [dict(zip(c.keys(), c)) for c in data]
 
-# data = get_all_data("Customers", id="2",name="Chinmoy")   
-# print(data)
+# data = get_all_data("Customers", name="Chinmoy")   
+
+
+def delete_data(table_name, **filter):
+    sess = Session()
+    eval_table_name = eval(table_name)
+    try:
+        if filter:
+            filter_str = ','.join(f'{table_name}.{key} == "{val}"' for key,val in filter.items())
+            filter_str = eval(filter_str)
+            if len(filter) > 1:
+                sess.query(eval_table_name).filter(*filter_str).detete()
+                sess.commit()
+                LOGGER.success(f"Deleted record: {filter} from table: {table_name}")
+            else:
+
+                query = sess.query(eval_table_name).filter(filter_str).get()
+                sess.delete(query)
+                sess.commit()
+                LOGGER.success(f"Deleted record: {filter} from table: {table_name}")
+        else:
+            sess.delete(eval_table_name)  # Delete
+            sess.commit()  # Commit
+            LOGGER.success(f"Deleted: {table_name}")
+    except IntegrityError as e:
+        LOGGER.error(e.orig)
+        raise e.orig
+    except SQLAlchemyError as e:
+        LOGGER.error(f"Unexpected error when deleting table: {e}")
+        raise e
+
+
+delete_data("Customers", id=1)        
